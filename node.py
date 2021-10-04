@@ -1,32 +1,82 @@
-import os,socket
-
+import pickle, socket, multiprocessing, struct, os,shutil
 CHUNKSIZE = 1_000_000
-class Node():
+class Server():
 
-    def __init__(self,hostname,port): #Inicializacion del Cliente
-        self.hostname = hostname
-        self.port = port
+    def __init__(self, hostname, port):
+        self.hostname = 'localhost'
+        self.port = 5000
+        self.dicc = {}
+        self.connected = True
 
-    def init_conec(self):#Inicio de conexion servidor cliente
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((self.hostname,self.port))
-        print(self.sock)
-        
-# Make a directory for the received files.
+    def iniciar_conexion(self):
+        # Iniciar servicio
+        try:
+            print('Escuchando')
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.bind((self.hostname, self.port))
+            if(os.path.isdir('Buckets') == False):
+                os.mkdir('Buckets')
+            self.sock.listen(1)
+        except Exception as e:
+            print(e)
 
-    def rec_dir(self):#Recibe la carpeta Buckets del servidor y la replica para ser examinada con la carpeta local
-        os.makedirs('Buckets2',exist_ok=True)
-        print(self.sock)
-        with self.sock,self.sock.makefile('rb') as clientfile:
+    def aceptar_conexion(self):
+        # Aceptar solicitudes
+        while True:
+            self.conn, self.addr = self.sock.accept()
+            # self.client = self.sock.accept()
+            print('conectado con %r', self.addr)
+            # Manejo de procesos mediante el uso de un while y el manejo de un metodo
+            self.connected = True
+            self.recibir_datos()
+
+    def send_dir(self):
+        print("Entro al metodo para enviar")
+        slf = True
+        while slf:
+            print("Entro al metodo para slf")
+            
+            with self.conn:
+                for path,dirs,files in os.walk('Buckets'):
+                    for file in files:
+                        filename = os.path.join(path,file)
+                        relpath = os.path.relpath(filename,'Buckets')
+                        filesize = os.path.getsize(filename)
+
+                        print(f'Sending {relpath}')
+
+                        with open(filename,'rb') as f:
+                            self.conn.sendall(relpath.encode() + b'\n')
+                            self.conn.sendall(str(filesize).encode() + b'\n')
+
+                            # Send the file in chunks so large files can be handled.
+                            while True:
+                                data = f.read(CHUNKSIZE)
+                                print(data)
+                                if not data: break
+                                self.conn.sendall(data)
+                print('Done.')
+                slf=False
+        print("Sali del while")
+        self.conn.close()
+
+    def recibir_data(self):
+        os.makedirs('client',exist_ok=True)
+        print("Searching for data")
+        client,address = self.sock.accept()
+        datos = ''
+        with client,client.makefile('rb') as clientfile:
+            
             while True:
                 
                 raw = clientfile.readline()
-                
+                print(raw)
                 if not raw: break # no more files, server closed connection.
 
                 filename = raw.strip().decode()
+                print("Entro en el while true")
                 length = int(clientfile.readline())
-                print(f'Downloading {filename}...\n  Expecting {length:,} bytes...',end='',flush=True)
+                print(f'Downloading {filename}...\n  Expecting {length:,} bytes...',end='')
 
                 path = os.path.join('client',filename)
                 os.makedirs(os.path.dirname(path),exist_ok=True)
@@ -36,55 +86,72 @@ class Node():
                     while length:
                         chunk = min(length,CHUNKSIZE)
                         data = clientfile.read(chunk)
-                        if not data: break
+                        if not data: print('no data')
                         f.write(data)
                         length -= len(data)
                     else: # only runs if while doesn't break and length==0
                         print('Complete')
                         continue
-
-                # socket was closed early.
-                print('Incomplete')
-                break 
-
-    def send_dir(self):
-        slf = True
-        print("Entro send dir")
-        
-        while slf:
             
-            with self.sock:
-                for path,dirs,files in os.walk('client'):
-                    for file in files:
-                        filename = os.path.join(path,file)
-                        relpath = os.path.relpath(filename,'client')
-                        filesize = os.path.getsize(filename)
 
-                        print(f'Sending {relpath}')
-
-                        with open(filename,'rb') as f:
-                            self.sock.sendall(relpath.encode() + b'\n')
-                            self.sock.sendall(str(filesize).encode() + b'\n')
-
-                            # Send the file in chunks so large files can be handled.
-                            while True:
-                                data = f.read(CHUNKSIZE)
-                                if not data: break
-                                self.sock.sendall(data)
-                print('Done.')
-                slf = False
-
+    def recibir_datos(self):
+        datos = ''
+        print(self.conn)
+        while self.connected:
+            try:
+                # Recibir datos del cliente.
+                lengthbuf = self.recvall(self.conn, 4)
+                length, = struct.unpack('!I', lengthbuf)
+                print("Estoy listo para recibir comandos...")
+                datos = self.recvall(self.conn, length)
+                # self.conn.sendall(b'Se han recibido los datos')
                 
-def main():
-    node= Node("localhost",5050)
-    a = input("Ingrese el numero")
-    
-    node.init_conec()
-    # if a == "1":
-    #     node.rec_dir()
-    # else:
-    #     node.send_dir()
-    node.rec_dir()
-    # node.send_dir()
+                self.organizar_datos(datos)
+            except Exception:
+                self.connected = False
+                self.conn.close()
+                print("Cerre conexion")
+                print(self.conn)
+                
+
+    def recvall (self, sock, count):
+        buf = b''
+        while count:
+            print(sock)
+            newbuf = sock.recv (count)
+            if not  newbuf: return None
+            buf += newbuf
+            count -= len (newbuf)
+        return buf
+
+    def organizar_datos(self,x):
+        print("Esperando comando")
+        # swicth para llamara los metodos necesarios que envia el cliente
+        datos = pickle.loads(x)
+        
+        if(datos['comando'] == '1'):
+            print("Recibido comando de recibir directorio")
+            self.recibir_data()
+            
+
+        if(datos['comando'] == '2'):
+            print("Recibido comando de enviar directorio")
+            self.send_dir()
+            
+
+
+        if(datos['comando'] == '3'):
+            print("Se esta cerrando el servidor.")
+            self.connected = False
+
+    def cerrar_con(self):
+        # Cerrar conexión
+        self.sock.close()
+
 if __name__ == "__main__":
-    main()
+ # Probar conexion entre cliente y socket
+    s = Server( hostname = 'localhost', port = 5000)
+    s.iniciar_conexion()
+    s.aceptar_conexion()
+    
+    print('Listo')
