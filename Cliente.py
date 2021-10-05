@@ -50,9 +50,10 @@ class Cliente():
         msg = self.sock.recv(17520)
         msgg = pickle.loads(msg)
         print(colorama.Back.BLUE+colorama.Fore.RED+ msgg['mensaje']+colorama.Style.RESET_ALL)
-        if(msgg['mensaje'] != (f"No existe el bucket {self.dicc['bucket']}")):
+        if(msgg['mensaje'] == ( f"Esta es la lista de archivos dentro de {self.dicc['bucket']}")):
+            print(msgg['lista'])
             for fichero in msgg['lista']:
-                print(fichero)    
+                print("- " + fichero)    
 
     def cerrar_conexion(self):
         self.sock.close()
@@ -60,17 +61,19 @@ class Cliente():
     def inter_user(self):
         variable = 1;
         colorama.init()
-        while(int(variable) < 8):
-            print('Bienvenido a la central de control servidor-socket. En que le podemos ayudar hoy?''\n'+ '1)Crear bucket''\n' +'2)Eliminar un bucket''\n' +'3)Ver lista de todos los buckets''\n' +'4)Subir un archivo a un bucket''\n5)Eliminar un archivo de un bucket \n6)Listar archivos de un bucket\n7)Validar carpetas en nodos\n8)Acabar con la conexion')
+        while(int(variable) < 9):
+            print('\n\nBienvenido a la central de control servidor-socket. En que le podemos ayudar hoy?''\n'+ '1)Crear Key''\n' +'2)Eliminar una Key''\n' +'3)Ver lista de todos los buckets'+'\n4)Eliminar un archivo de una Key \n5)Listar archivos de una Key\n6)Validar carpetas en servidor\n7)Validar carpetas en nodos\n8)Acabar con la conexion')
             variable= input()
             if(variable == '1'):
                 self.dicc['comando'] = '1'
-                self.dicc['bucket'] = input('Ingrese el nombre del nuevo bucket \n')
+                self.dicc['bucket'] = input('Ingrese el nombre del nuevo bucket \n\n')
+                path = input('Ingrese el path del archivo a subir \n\n')
+                self.leer_archivo(path)
                 self.enviar_archivo()
                 self.recvall()
             if(variable == '2'):
                 self.dicc['comando'] = '2'
-                self.dicc['bucket'] = input('Ingrese el nombre del bucket a eliminar\n')
+                self.dicc['bucket'] = input('Ingrese el nombre del bucket a eliminar\n\n')
                 self.enviar_archivo()
                 self.recvall()
             if(variable == '3'):
@@ -78,22 +81,20 @@ class Cliente():
                 self.dicc['bucket'] = " "
                 self.enviar_archivo()
                 self.recvallfile()
+           
             if(variable == '4'):
                 self.dicc['comando'] = '4'
-                path = input('Ingrese el path del archivo a subir \n')
-                bucket = input('Ingrese el bucket(Carpeta) donde quiere que el archivo se suba \n')
-                self.dicc['bucket'] = bucket
-                self.leer_archivo(path)
-                self.enviar_archivo()
-                self.recvall()
-            if(variable == '5'):
-                self.dicc['comando'] = '5'
-                bucket = input('Ingrese el bucket(Carpeta) de donde quiere eliminar el archivo \n')
-                path = input('Ingrese el nombre del archivo a eliminar (con extension) \n')
+                bucket = input('Ingrese el bucket(Carpeta) de donde quiere eliminar el archivo \n\n')
+                path = input('Ingrese el nombre del archivo a eliminar (con extension) \n\n')
                 self.dicc['bucket'] = bucket
                 self.dicc['nombreArchivo'] = path
                 self.enviar_archivo()
                 self.recvall()
+            if(variable == '5'):
+                self.dicc['comando'] = '5'
+                self.dicc['bucket'] = input("Ingrese el valor de la key para listar sus archivos\n\n")
+                self.enviar_archivo()
+                self.recvallfile()
             if(variable == '6'):
                 self.dicc['comando'] = '6'
                 self.enviar_archivo()

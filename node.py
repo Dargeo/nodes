@@ -1,4 +1,4 @@
-import pickle, socket, multiprocessing, struct, os,shutil
+import pickle, socket, multiprocessing, struct, os,shutil,filecmp
 CHUNKSIZE = 1_000_000
 class Server():
 
@@ -61,12 +61,12 @@ class Server():
         self.conn.close()
 
     def recibir_data(self):
-        os.makedirs('client',exist_ok=True)
-        print("Searching for data")
-        client,address = self.sock.accept()
+        os.makedirs('Servidor',exist_ok=True)
+        
+        
         datos = ''
-        with client,client.makefile('rb') as clientfile:
-            
+        with self.conn,self.conn.makefile('rb') as clientfile:
+            print("Searching for data")
             while True:
                 
                 raw = clientfile.readline()
@@ -74,11 +74,11 @@ class Server():
                 if not raw: break # no more files, server closed connection.
 
                 filename = raw.strip().decode()
-                print("Entro en el while true")
+                
                 length = int(clientfile.readline())
                 print(f'Downloading {filename}...\n  Expecting {length:,} bytes...',end='')
 
-                path = os.path.join('client',filename)
+                path = os.path.join('Servidor',filename)
                 os.makedirs(os.path.dirname(path),exist_ok=True)
 
                 # Read the data in chunks so it can handle large files.
@@ -92,11 +92,22 @@ class Server():
                     else: # only runs if while doesn't break and length==0
                         print('Complete')
                         continue
-            
+            self.compare_folder_server()
 
+    def compare_folder_server(self):
+         print("entre")
+         a = filecmp.dircmp('Buckets','Servidor').left_list
+         b = filecmp.dircmp('Buckets','Servidor').right_list
+         if len(a) != len(b):
+             shutil.rmtree('Buckets')
+             
+             shutil.copytree('Servidor','Buckets')
+
+            
     def recibir_datos(self):
         datos = ''
         print(self.conn)
+        
         while self.connected:
             try:
                 # Recibir datos del cliente.
@@ -125,6 +136,7 @@ class Server():
         return buf
 
     def organizar_datos(self,x):
+        
         print("Esperando comando")
         # swicth para llamara los metodos necesarios que envia el cliente
         datos = pickle.loads(x)

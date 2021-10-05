@@ -1,4 +1,4 @@
-import pickle, socket, multiprocessing, struct, os,shutil
+import pickle, socket, multiprocessing, struct, os,shutil,filecmp
 CHUNKSIZE = 1_000_000
 class Server():
 
@@ -72,7 +72,7 @@ class Server():
         slf = True
         self.dicc['comando'] = '2'
         self.env_dataNode(soc)
-        os.makedirs('client',exist_ok=True)
+        os.makedirs('Nodo',exist_ok=True)
         print("Searching for data")
         
         with soc,soc.makefile('rb') as clientfile:
@@ -89,7 +89,7 @@ class Server():
                 length = int(clientfile.readline())
                 print(f'Downloading {filename}...\n  Expecting {length:,} bytes...',end='')
 
-                path = os.path.join('client',filename)
+                path = os.path.join('Nodo',filename)
                 os.makedirs(os.path.dirname(path),exist_ok=True)
 
                 # Read the data in chunks so it can handle large files.
@@ -106,9 +106,10 @@ class Server():
                 print('Incomplete')
                 break 
 
-
+        self.compare_folder_server()        
         self.dicc['mensaje'] =f"Se esta ejecutando la validacion de carpetas"          
         self.enviar_archivo()
+        
             
             
     def crear_bucket(self,datos):
@@ -160,7 +161,7 @@ class Server():
                 # Recibir datos del cliente.
                 lengthbuf = self.recvall(self.conn, 4)
                 length, = struct.unpack('!I', lengthbuf)
-                print("Si recibo datos")
+                
                 datos = self.recvall(self.conn, length)
                 # self.conn.sendall(b'Se han recibido los datos')
                 self.organizar_datos(datos)
@@ -176,6 +177,15 @@ class Server():
             count -= len (newbuf)
         return buf
 
+    def compare_folder_server(self):
+         print("entre")
+         a = filecmp.dircmp('Buckets','Nodo').left_list
+         b = filecmp.dircmp('Buckets','Nodo').right_list
+         if len(a) != len(b):
+             shutil.rmtree('Buckets')
+             
+             shutil.copytree('Nodo','Buckets')
+    
     def guardar_archivo(self,datos):
 
         if(os.path.isdir('Buckets/' + datos['bucket']) == False):
@@ -190,7 +200,9 @@ class Server():
         if(os.path.isdir('Buckets/' + datos['bucket']) == False):
             self.dicc['mensaje'] = f"No existe el bucket {datos['bucket']}"
         else:
+            print(os.listdir('Buckets/' + datos['bucket']))
             self.dicc['lista'] = os.listdir('Buckets/' + datos['bucket'])
+            print(self.dicc['lista'])
             self.dicc['mensaje'] = f"Esta es la lista de archivos dentro de {datos['bucket']}"
         self.enviar_archivo()
 
@@ -203,7 +215,7 @@ class Server():
         datos = pickle.loads(x)
         if(datos['comando'] == '1'):
             print("Recibi comando" + datos['comando'])
-            self.crear_bucket(datos)
+            self.guardar_archivo(datos)
 
         if(datos['comando'] == '2'):
             print("Recibi comando" + datos['comando'])
@@ -215,12 +227,12 @@ class Server():
 
         if(datos['comando'] == '4'):
             print("Recibi comando" + datos['comando'])
-            self.guardar_archivo(datos)
-
+            self.eliminar_archivo(datos)
+    
         if(datos['comando'] == '5'):
             print("Recibi comando" + datos['comando'])
             self.listar_archivos(datos)
-    
+
         if(datos['comando'] == '6'):
             print("Recibi comando" + datos['comando'])
             self.conect_nodes(datos)
@@ -232,7 +244,7 @@ class Server():
 
         if(datos['comando'] == '8'):
             print("Recibi comando" + datos['comando'])
-            print("Se esta cerrando el servidor.")
+            print("Se esta cerrando la conexion con el cliente.")
             self.connected = False
 
     def cerrar_con(self,connect):
@@ -253,6 +265,8 @@ class Server():
                 self.send_dir(self.sock2)
         except Exception as e:
             print(e)
+            self.dicc['mensaje'] = "No se pudo establecer conexion con el Nodo"
+            self.enviar_archivo()
         # try:
         #     self.sock3 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         #     self.sock3.connect((self.hostname, 8000))
