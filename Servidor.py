@@ -24,7 +24,7 @@ class Server():
         # Aceptar solicitudes
         while True:
             self.conn, self.addr = self.sock.accept()
-            print('conectado con %r', self.addr)
+            print('Cliente conectado con la ip', self.addr)
             # Manejo de procesos mediante el uso de un while y el manejo de un metodo
             proceso = multiprocessing.Process(target= self.recibir_datos, args=())
             # proceso.daemon = True
@@ -73,7 +73,7 @@ class Server():
         self.dicc['comando'] = '2'
         self.env_dataNode(soc)
         os.makedirs('Nodo',exist_ok=True)
-        print("Searching for data")
+        print("Buscando informacion, esperando informacion")
         
         with soc,soc.makefile('rb') as clientfile:
             print("Entro 1")
@@ -87,7 +87,7 @@ class Server():
                 filename = raw.strip().decode()
                 
                 length = int(clientfile.readline())
-                print(f'Downloading {filename}...\n  Expecting {length:,} bytes...',end='')
+                print(f'Descargando {filename}...\n  Se esperan {length:,} bytes...',end='')
 
                 path = os.path.join('Nodo',filename)
                 os.makedirs(os.path.dirname(path),exist_ok=True)
@@ -101,9 +101,9 @@ class Server():
                         f.write(data)
                         length -= len(data)
                     else: # only runs if while doesn't break and length==0
-                        print('Complete')
+                        print('Descargado de manera correcta')
                         continue
-                print('Incomplete')
+                print('Incompleto')
                 break 
 
         self.compare_folder_server()        
@@ -194,6 +194,7 @@ class Server():
         file.write(datos['contenido'])
         file.close()
         self.dicc['mensaje'] =f"El archivo {datos['nombreArchivo']} ha sido guardado"
+        print(f"Se ha guardado el archivo {datos['nombreArchivo']}")
         self.enviar_archivo()
 
     def listar_archivos(self,datos):
@@ -284,7 +285,7 @@ if __name__ == "__main__":
     s.iniciar_conexion()
     s.aceptar_conexion()
     for proceso in multiprocessing.active_children():
-        print('Terminando proceso %r', proceso)
+        print('Cliente conectado con la ip (Multiprocesos)', s.addr)
         proceso.terminate()
         proceso.join()
     print('Listo')
