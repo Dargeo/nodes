@@ -3,8 +3,8 @@ CHUNKSIZE = 1_000_000
 class Server():
 
     def __init__(self, hostname, port):
-        self.hostname = 'localhost'
-        self.port = 5000
+        self.hostname = hostname
+        self.port = port
         self.dicc = {}
         self.connected = True
 
@@ -162,7 +162,7 @@ class Server():
 
 if __name__ == "__main__":
  # Probar conexion entre cliente y socket
-    s = Server( hostname = 'localhost', port = 5000)
+    s = Server( hostname = '172.31.63.57', port = 5050)
     s.iniciar_conexion()
     s.aceptar_conexion()
     
