@@ -3,7 +3,7 @@ import socket, pickle, struct,os, colorama
 class Cliente():
     
     def __init__(self):
-        self.hostname = 'localhost'
+        self.hostname = '172.31.62.214'
         self.port = 5050 
         self.dicc = {}
      
