@@ -66,14 +66,14 @@ class Cliente():
             variable= input()
             if(variable == '1'):
                 self.dicc['comando'] = '1'
-                self.dicc['bucket'] = input('Ingrese el nombre del nuevo bucket \n\n')
+                self.dicc['bucket'] = input('Ingrese el nombre de la nueva key \n\n')
                 path = input('Ingrese el path del archivo a subir \n\n')
                 self.leer_archivo(path)
                 self.enviar_archivo()
                 self.recvall()
             if(variable == '2'):
                 self.dicc['comando'] = '2'
-                self.dicc['bucket'] = input('Ingrese el nombre del bucket a eliminar\n\n')
+                self.dicc['bucket'] = input('Ingrese el nombre de la key a eliminar\n\n')
                 self.enviar_archivo()
                 self.recvall()
             if(variable == '3'):
@@ -84,7 +84,7 @@ class Cliente():
            
             if(variable == '4'):
                 self.dicc['comando'] = '4'
-                bucket = input('Ingrese el bucket(Carpeta) de donde quiere eliminar el archivo \n\n')
+                bucket = input('Ingrese el key de donde quiere eliminar el archivo \n\n')
                 path = input('Ingrese el nombre del archivo a eliminar (con extension) \n\n')
                 self.dicc['bucket'] = bucket
                 self.dicc['nombreArchivo'] = path
@@ -107,6 +107,8 @@ class Cliente():
                 self.dicc['comando'] = '8'
                 self.enviar_archivo()
                 self.cerrar_conexion()
+                self.sock.close()
+                break
 
 if __name__ == "__main__":
     c = Cliente()
