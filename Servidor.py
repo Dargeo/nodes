@@ -30,7 +30,7 @@ class Server():
             # proceso.daemon = True
             proceso.start()
             
-            print('Nuevo proceso inciado %r', proceso)
+            print('Cliente conectado con la ip (Multiprocesos)', s.addr)
 
     def send_dir(self,soc):
         self.dicc['comando'] = '1'
@@ -215,7 +215,7 @@ class Server():
         self.dicc['archivo'] = "no"
         datos = pickle.loads(x)
         if(datos['comando'] == '1'):
-            print("Recibi comando" + datos['comando'])
+            print("Recibi comando " + datos['comando'])
             self.guardar_archivo(datos)
 
         if(datos['comando'] == '2'):
@@ -223,28 +223,28 @@ class Server():
             self.eliminar_bucket(datos)
 
         if(datos['comando'] == '3'):
-            print("Recibi comando" + datos['comando'])
+            print("Recibi comando " + datos['comando'])
             self.enviar_archivo()
 
         if(datos['comando'] == '4'):
-            print("Recibi comando" + datos['comando'])
+            print("Recibi comando " + datos['comando'])
             self.eliminar_archivo(datos)
     
         if(datos['comando'] == '5'):
-            print("Recibi comando" + datos['comando'])
+            print("Recibi comando " + datos['comando'])
             self.listar_archivos(datos)
 
         if(datos['comando'] == '6'):
-            print("Recibi comando" + datos['comando'])
+            print("Recibi comando " + datos['comando'])
             self.conect_nodes(datos)
 
         if(datos['comando'] == '7'):
-            print("Recibi comando" + datos['comando'])
+            print("Recibi comando " + datos['comando'])
             self.conect_nodes(datos)
 
 
         if(datos['comando'] == '8'):
-            print("Recibi comando" + datos['comando'])
+            print("Recibi comando " + datos['comando'])
             print("Se esta cerrando la conexion con el cliente.")
             self.connected = False
 
