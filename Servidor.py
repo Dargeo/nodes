@@ -1,4 +1,4 @@
-import pickle, socket, multiprocessing, struct, os,shutil,filecmp
+import pickle, socket, multiprocessing, mysql.connector, struct, os,shutil,filecmp
 CHUNKSIZE = 1_000_000
 class Server():
 
@@ -6,7 +6,7 @@ class Server():
         self.hostname = hostname
         self.port = port
         self.dicc = {}
-        self.connected = True
+       	self.connected = True
 
     def iniciar_conexion(self):
         # Iniciar servicio
@@ -159,6 +159,7 @@ class Server():
         while self.connected:
             try:
                 # Recibir datos del cliente.
+                print("Esperando comando")
                 lengthbuf = self.recvall(self.conn, 4)
                 length, = struct.unpack('!I', lengthbuf)
                 
@@ -187,7 +188,16 @@ class Server():
              shutil.copytree('Nodo','Buckets')
     
     def guardar_archivo(self,datos):
-
+        
+        var1 = str(datos['bucket'])
+        var2 = str(datos['nombreArchivo'])
+        db = mysql.connector.connect(host = "localhost", user ="root",passwd = "aowLJQ91*",database = "server")
+        cursor = db.cursor()
+        try:
+            cursor.execute("CREATE TABLE Llaves (llave VARCHAR(50), dato VARCHAR(50) )")
+        except:
+            print("Ya esta creada la tabla Llaves")
+        
         if(os.path.isdir('Buckets/' + datos['bucket']) == False):
             os.mkdir('Buckets/' + datos['bucket'])
         file = open('Buckets/' + datos['bucket']+'/'+datos['nombreArchivo'],'wb')
@@ -195,6 +205,11 @@ class Server():
         file.close()
         self.dicc['mensaje'] =f"El archivo {datos['nombreArchivo']} ha sido guardado"
         print(f"Se ha guardado el archivo {datos['nombreArchivo']}")
+        cursor.execute("INSERT INTO Llaves(llave,dato) VALUES (%s,%s)", (var1,var2))
+        db.commit()
+        cursor.execute("SELECT * FROM Llaves")
+        for x in cursor:
+             print(x)
         self.enviar_archivo()
 
     def listar_archivos(self,datos):
@@ -208,7 +223,6 @@ class Server():
         self.enviar_archivo()
 
     def organizar_datos(self,x):
-        print("Esperando comando")
         # swicth para llamara los metodos necesarios que envia el cliente
         self.dicc['lista'] = os.listdir('Buckets')
         self.dicc['mensaje'] = "Esta es la lista de buckets"
@@ -224,6 +238,7 @@ class Server():
 
         if(datos['comando'] == '3'):
             print("Recibi comando " + datos['comando'])
+            print(os.listdir('Buckets'))
             self.enviar_archivo()
 
         if(datos['comando'] == '4'):
@@ -258,7 +273,7 @@ class Server():
         # Iniciar servicio
         try:
             self.sock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock2.connect((self.hostname, 5000))
+            self.sock2.connect(('172.31.63.57', 5000))
             print("Connected with%r",self.sock2)
             if datos['comando'] == '6':
                 self.recibir_data(self.sock2)
