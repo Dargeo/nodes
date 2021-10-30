@@ -162,7 +162,7 @@ class Server():
 
 if __name__ == "__main__":
  # Probar conexion entre cliente y socket
-    s = Server( hostname = '172.31.63.57', port = 5050)
+    s = Server( hostname = '172.31.63.57', port = 5000)
     s.iniciar_conexion()
     s.aceptar_conexion()
     

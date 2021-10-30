@@ -50,7 +50,7 @@ class Cliente():
         msg = self.sock.recv(17520)
         msgg = pickle.loads(msg)
         print(colorama.Back.BLUE+colorama.Fore.RED+ msgg['mensaje']+colorama.Style.RESET_ALL)
-        if(msgg['mensaje'] == ( f"Esta es la lista de archivos dentro de {self.dicc['bucket']}")):
+        if(msgg['mensaje'] != ( f"No existe el bucket {self.dicc['bucket']}")):
             print(msgg['lista'])
             for fichero in msgg['lista']:
                 print("- " + fichero)    
