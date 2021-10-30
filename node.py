@@ -145,11 +145,9 @@ class Server():
             print("Recibido comando de recibir directorio")
             self.recibir_data()
             
-
         if(datos['comando'] == '2'):
             print("Recibido comando de enviar directorio")
             self.send_dir()
-            
 
 
         if(datos['comando'] == '3'):
